@@ -1,12 +1,12 @@
+# Ticket Booking System Smart Contracts
+
+This project is a decentralized **event ticket selling system** powered by blockchain smart contracts. The goal is to build **trust** by **decentralizing** the process and ensuring **transparency** for both organizers and attendees.
+
 ![Ethereum](https://img.shields.io/badge/Ethereum-Sepolia-3c3c3d?logo=ethereum&logoColor=white)
 ![Solidity](https://img.shields.io/badge/Solidity-0.8.0-363636?logo=solidity&logoColor=white)
 ![Hardhat](https://img.shields.io/badge/Hardhat-2.28-FFF100?logo=hardhat&logoColor=black)
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES6-F7DF1E?logo=javascript&logoColor=black)
 ![ethers.js](https://img.shields.io/badge/ethers.js-v6-2535a0?logo=ethers&logoColor=white)
-
-# Ticket Booking System Smart Contracts
-
-This project is a decentralized **event ticket selling system** powered by blockchain smart contracts. The goal is to build **trust** by **decentralizing** the process and ensuring **transparency** for both organizers and attendees.
 
 ## Features
 
