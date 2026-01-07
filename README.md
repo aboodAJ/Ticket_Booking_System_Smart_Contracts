@@ -1,8 +1,46 @@
 # Ticket Booking System Smart Contracts
 
-A decentralized ticket booking system using the **Factory Pattern** on Ethereum.
-- **TicketFactory**: Deploys individual match contracts.
-- **MatchTicket**: Handles ticket sales, cancellations, and refunds with penalty logic.
+This project is a decentralized **event ticket selling system** powered by blockchain smart contracts. The goal is to build **trust** by **decentralizing** the process and ensuring **transparency** for both organizers and attendees.
+
+## Features
+
+### Match Creation
+Owners can create matches by specifying their parameters, such as ticket price, capacity, and date. To ensure commitment, owners must play with an initial collateral.
+
+### Ticket Purchase
+Users can check all available matches and buy tickets directly from the smart contract. Each user is limited to a maximum of **4 tickets** to ensure fair distribution.
+
+### Emergency Cancellations
+If a match is cancelled for emergency reasons, users are **automatically paid back**. The refund includes the ticket price **plus additional collateral** that the owners put up. This ensures users are compensated for the cancellation.
+
+### Fund Withdrawal
+When a match is played and finished successfully, the owners can claim the revenue securely from the contract.
+
+## Technical Architecture & Design
+
+### Factory Pattern Implementation
+To ensure scalability and efficient management, the system uses a **Factory Pattern** (`TicketFactory.sol`). This works as a central registry and deployer for all match events.
+
+1.  **Deployment**:
+    *   The `TicketFactory` contract is the only entity authorized to deploy new `MatchTicketAuto` instances.
+    *   When an owner calls `createMatch`, the factory instantiates a new contract and calculates the gas/collateral required.
+    *   This ensures all Match contracts share the exact same verified bytecode structure.
+
+2.  **Storage & Tracking**:
+    *   **Registry**: The factory maintains an array `MatchTicketAuto[] public matches` containing the addresses of all deployed match contracts.
+    *   **Indexing**: Users or frontends can access specific match contracts by their index using the public getter `matches(index)`.
+
+3.  **Data Retrieval**:
+    The factory provides a specialized `getActiveMatches()` function:
+    *   It iterates through the stored contract addresses.
+    *   It performs an on-chain reading of each contract's state (`isCancelled` and `matchDate`).
+    *   It returns a filtered list of only valid, upcoming matches.
+    *   *Benefit*: This reduces the burden on the frontend to filter out old or invalid events.
+
+### Match Interaction Flow
+Once the frontend or user retrieves a match address from the Factory:
+1.  **Direct Interaction**: Users interact directly with the specific `MatchTicketAuto` contract address to buy tickets.
+2.  **Isolation**: Each match has its own state (collateral balance, buyers list), so an issue in one match does not affect others.
 
 ## Prerequisites
 - Node.js
@@ -25,8 +63,3 @@ npx hardhat test
 ```bash
 npx hardhat run scripts/deploy.js --network sepolia
 ```
-
-## Features
-- **Factory Pattern**: Scalable match creation.
-- **Circuit Breaker**: Owners can cancel matches before they start.
-- **Penalty/Insurance**: If a match is cancelled, users get a refund + a share of the owner's collateral.

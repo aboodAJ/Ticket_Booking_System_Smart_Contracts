@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-contract MatchTicket {
-    address public owner1; // Factory Owner
-    address public owner2; // Factory Co-Owner
+contract MatchTicketAuto {
+    address public owner1;
+    address public owner2;
     string public matchName;
     uint256 public ticketPrice;
     uint256 public capacity;
@@ -12,12 +12,15 @@ contract MatchTicket {
     uint256 public ticketsSold;
     bool public isCancelled;
     uint256 public collateral;
-
     mapping(address => uint256) public ticketsOwned;
+
+    // NEW: Data structures for Automatic Refunds
+    address[] public buyers;
+    mapping(address => bool) public hasBought;
 
     event TicketPurchased(address indexed buyer, uint256 quantity);
     event MatchCancelled();
-    event RefundClaimed(address indexed user, uint256 amount);
+    event RefundSent(address indexed user, uint256 amount); // Renamed event
     event fundsWithdrawn(address indexed owner, uint256 amount);
 
     constructor(
@@ -56,36 +59,56 @@ contract MatchTicket {
         );
         require(msg.value == ticketPrice * _quantity, "Incorrect ether sent");
 
+        // NEW: Add them to the list if they are new
+        if (!hasBought[msg.sender]) {
+            buyers.push(msg.sender);
+            hasBought[msg.sender] = true;
+        }
+
         ticketsOwned[msg.sender] += _quantity;
         ticketsSold += _quantity;
 
         emit TicketPurchased(msg.sender, _quantity);
     }
 
+    // --- THE AUTOMATIC REFUND LOGIC ---
     function cancelMatch() external onlyOwner {
         require(block.timestamp < matchDate, "Too late to cancel");
         require(!isCancelled, "Already cancelled");
 
         isCancelled = true;
+
+        if (ticketsSold == 0) {
+            // Just send the entire contract balance (which is only the collateral) back to the caller
+            uint256 balance = address(this).balance;
+            payable(msg.sender).transfer(balance);
+
+            emit MatchCancelled();
+            emit fundsWithdrawn(msg.sender, balance); // Reusing event to track it
+            return; // EXIT FUNCTION HERE. Do not run the loop below.
+        }
+
+        // Loop through all buyers
+        for (uint256 i = 0; i < buyers.length; i++) {
+            address buyer = buyers[i];
+            uint256 quantity = ticketsOwned[buyer];
+
+            if (quantity > 0) {
+                // Calculate their share
+                uint256 penaltyShare = (collateral * quantity) / ticketsSold;
+                uint256 totalRefund = (ticketPrice * quantity) + penaltyShare;
+
+                // Reset their tickets to 0
+                ticketsOwned[buyer] = 0;
+
+                // Send the money automatically
+                payable(buyer).transfer(totalRefund);
+
+                emit RefundSent(buyer, totalRefund);
+            }
+        }
+
         emit MatchCancelled();
-    }
-
-    function claimRefund() external {
-        require(isCancelled, "Match not cancelled");
-        uint256 quantity = ticketsOwned[msg.sender];
-        require(quantity > 0, "No tickets to refund");
-
-        // Calculate refund
-        // Math: UserRefund = (Price * Quantity) + ((Collateral / TotalSold) * Quantity)
-        // Using (Collateral * Quantity) / TotalSold for better precision
-        uint256 penaltyShare = (collateral * quantity) / ticketsSold;
-        uint256 totalRefund = (ticketPrice * quantity) + penaltyShare;
-
-        ticketsOwned[msg.sender] = 0; // Prevent re-entrancy impact
-
-        payable(msg.sender).transfer(totalRefund);
-
-        emit RefundClaimed(msg.sender, totalRefund);
     }
 
     function withdraw() external onlyOwner {

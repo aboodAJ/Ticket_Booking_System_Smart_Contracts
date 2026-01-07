@@ -1,36 +1,36 @@
 const hre = require("hardhat");
+require("dotenv").config(); // Load the .env file
 
 async function main() {
-    console.log("Starting deployment...");
+    // 1. Get the Co-Owner address from your .env file
+    const coOwnerAddress = process.env.CO_OWNER_ADDRESS;
 
-    // 1. Get the deployer wallet (your account)
-    const [deployer] = await hre.ethers.getSigners();
-    console.log("Deploying contracts with the account:", deployer.address);
+    // Safety Check: Stop if the address is missing
+    if (!coOwnerAddress) {
+        console.error("❌ Error: CO_OWNER_ADDRESS is missing in your .env file!");
+        console.log("👉 Please add: CO_OWNER_ADDRESS='0x...' to your .env file.");
+        process.exit(1);
+    }
 
-    // Optional: Check balance to ensure you have enough ETH
-    const balance = await hre.ethers.provider.getBalance(deployer.address);
-    console.log("Account balance:", hre.ethers.formatEther(balance));
+    console.log("🚀 Starting deployment...");
+    console.log("Deploying TicketFactory with Co-Owner:", coOwnerAddress);
 
     // 2. Get the Contract Factory
     const TicketFactory = await hre.ethers.getContractFactory("TicketFactory");
 
-    // 3. Deploy the contract
-    // No arguments needed for the constructor
-    console.log("Deploying TicketFactory...");
-    const factory = await TicketFactory.deploy();
+    // 3. Deploy passing the argument
+    const factory = await TicketFactory.deploy(coOwnerAddress);
 
-    // 4. Wait for the transaction to be mined
+    // 4. Wait for it to finish
     await factory.waitForDeployment();
 
-    // 5. Success! Print the address
-    const factoryAddress = await factory.getAddress();
-    console.log("Success! TicketFactory deployed to:", factoryAddress);
+    const address = await factory.getAddress();
+    console.log("✅ Success! TicketFactory deployed to:", address);
 
-    console.log("\nIMPORTANT: Save this address! You will need it for your Frontend.");
-    console.log("Verify with: npx hardhat verify --network sepolia", factoryAddress);
+    console.log("\n👇 Verify command for Etherscan:");
+    console.log(`npx hardhat verify --network sepolia ${address} "${coOwnerAddress}"`);
 }
 
-// Standard async error handling
 main().catch((error) => {
     console.error(error);
     process.exitCode = 1;
