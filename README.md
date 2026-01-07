@@ -8,6 +8,11 @@ This project is a decentralized **event ticket selling system** powered by block
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES6-F7DF1E?logo=javascript&logoColor=black)
 ![ethers.js](https://img.shields.io/badge/ethers.js-v6-2535a0?logo=ethers&logoColor=white)
 
+## 📱 Frontend Application
+This project consists of two parts. The smart contracts live here, but the user interface is in a separate repository.
+
+👉 **[Click here to view the Next.js Frontend repository](https://github.com/othmanemrdev/chre-ticket-dialak)**
+
 ## Features
 
 ### Match Creation
